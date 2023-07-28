@@ -1,0 +1,115 @@
+Problem
+
+The final project involves a multiplayer capture-the-flag variant of Pacman, where agents
+control both Pacman and ghosts in coordinated team-based strategies. Your team will try to eat
+the food on the far side of the map, while defending the food on your home side. We were tasked
+with designing a Pacman agent(s) in myTeam.py that would be pitted against other agents in
+getting as many points as possible in a 2v2 game of Pacman. We split up in two working groups
+to focus on a singular agent, either an offensive agent or a defensive one. From here, we gave
+autonomy to those in control of each agent to choose how they wanted to model the problem,
+solve it, and make any algorithmic choices necessary.
+
+Offensive Agent - (Managed by Ali)
+
+As I approached drafting this agent, I first considered what my goals would be. I began
+by using the offensive baseline agent as my blueprint, and decided to improve upon it for my
+own offensive baseline agent. The baseline agent only had two features of game score and
+distance to food, so I knew to have a more aware agent I needed to increase the amount of
+features. I then played a few games of capture the flag controlling the offensive agent, trying to
+gauge what I was thinking about when looking to score points. Then, I realized I was gaining a
+lot of points from getting the capsule, going to the closest food, eating as much food as possible,
+and avoiding the enemy as it approached me. Thus, I modeled the problem with a close similarity
+to my evaluation function for minimax in PA2, and had features for distance to food, number of
+food remaining, distance to the closest enemy, closest scared ghost, closest capsule, and number
+of food and capsules remaining.
+Then came modeling the problem. For example, some features like the number of food
+remaining I needed to minimize, so I simply took the number remaining from the game state and
+used a negative weight. Others like distances to the closest enemy ghost and food I used the
+reciprocal squared, so they required inverse weights. I chose to use this strategy for these
+features because it made slight changes in their values more relevant to the behavior of my agent.
+Lastly, my first iteration of the agent had static weights attributed to all features that I used trial
+and error one by one to fine tune how much my agent would prioritize going for food versus
+avoiding enemies etc.
+Next, after evaluating that performance through keeping track of game score, and
+observing different decisions made by observing the linear combination and action choices, I
+noticed my agent needed to have some more dynamic behavior. One specific example was when
+the defensive agent continually blocked the same entrance, my offensive agent would pace back
+and forth waiting for the defensive agent to move so it could proceed to the closest food. This
+was obviously detrimental because it rendered my agent useless and put too much pressure on
+our defense to win matches, so I implemented a method to check when my agent was stuck. To
+do this I kept track of my agent's most recent 10 moves, and when it visited the same position 3
+times in that period, I turned on a flag to change the intention of the agent. This flag (called
+divebomb because originally I had it suicide and go for the closest food regardless) started a
+sequence of 7 moves where the goal of the agent changed towards eating any food (by removing
+the distance to the closest and only considering how much food is left) and avoid the enemy
+ghost by repositioning. Then, after this period the agent was hopefully in a different area of the
+map and could re-evaluate which food to go. This proved to be a successful method of
+unblocking my agent and helped us win against the baseline more consistently.
+
+Evaluations
+
+Overall, given my basic implementation of the offensive agent with a reflex system, I was
+proud of its performance. I had thoughts of implementing Q learning to use dynamically after
+some training in the first 15 seconds, but after talking with some classmates about lowering their
+scores, I was honestly too nervous to negatively impact the good performance we had reached
+thus far. My agent was sometimes stubborn, and did not have a great view of the future, and it
+did not learn from its past mistakes dynamically, but I did some of these things by watching
+games and altering weights, and the agent did have strengths in making the best possible move
+given the goals I assigned to it from the feature and weight combination.
+Lessons Learned and Possible Improvements
+Some things I learned about my agent and through this project in general included how
+many approaches can be used to solve a similar problem, and even how hard it can be to choose.
+I had to make many tradeoffs when designing features and weights for this agent, and I could
+definitely see where a reinforcement learning approach or deep learning to fine tune weights
+could be much more effective that a human decision making process. Given a lot more time and
+help, I think reinforcement learning would have been the direction I would go, especially if
+allocated more time to train, but otherwise I think a more dynamic decision making process
+would have made this agent even better. For example, some tangible adjustments I would have
+made would be only going after scared ghosts if they are about to be brave soon, and
+implementing some logic for tracking the enemy team's offense as my agent moves towards their
+side of the map. Overall I learned a lot from the project and had a lot of fun tinkering and
+improving the offensive agent.
+
+Defensive Agent - (Managed by Isaiah & Sameer)
+
+To first develop our defensive agent, I looked at the baseline defense agent:
+DefensiveReflexAgent. This agent simply wandered around on its own side, waiting for an
+enemy Pacman to appear which it would then chase down as soon as possible. Before anything
+else, I checked if the agent would be scared for a duration over two game ticks. If the agent was
+scared for over two game ticks, then I calculated all of the possible moves that could be made to
+keep the distance from the closest enemy Pacman the highest it could be, but within 4 spaces.
+I liked the idea of basically bee-lining to an enemy Pacman whenever they appeared on
+one side, but I wanted to limit how often that would happen by attempting to guess the most
+probable spot an enemy would take into our side. To do this, I decided I wanted to choose the
+best areas to patrol for enemy Pacman, keeping in mind the most likely places with food an
+enemy would go for. To do this, I would calculate halfway points in the middle of the stage
+which were basically when an enemy ghost would turn into a Pacman to eat the food we are
+defending. To double check these were viable patrol points, I would make sure they had no wall
+and then had them to the half points list. After this, I then found the minimum distances from
+these patrol points to our food we are defending, storing these to choose from later. I would then
+have my agent choose what to do depending on 3 scenarios: there was no enemy Pacman on our
+side, where it would then choose a spot to patrol, there was an enemy which we would then
+bee-line towards to remove, or we were scared after the enemy ate a pellet, which we would then
+run towards the enemy but maintain a distance in order to not get eaten until we were not scared
+anymore.
+
+Evaluations
+
+After numerous tests, I found that my Defensive Agent was able to stop the staff_baseline
+enemy from getting too many points if any at all. On most maps, it would be able to guess the
+correct point of entry for an enemy and would choose that spot, or at least something close, as its
+patrol point. This would allow us to eat up the enemy before it would consume any of our food;
+if it guessed wrong, however, it would be able to quickly chase down the enemy after we notice a
+missing mood. However, this appeared to be a map-specific strategy; while on most maps we
+would have more-or-less complete defense, or at least be able to recover quickly after the enemy
+eats some of our food, on some maps with certain layouts, incorrectly guessing a patrol point
+would impact us negatively as it would be hard to makeup the distance to chase the enemy,
+causing us to be down several points at the very beginning, which would lead to our Offensive
+agent being the reason whether we came back or not.
+Lessons Learned and Possible Improvements
+One possible improvement that could have been made was using the same principle of
+using patrol points, but continuously updating the locations of food on the board such that the
+best possible point to patrol would be chosen with each action. This would help our agent a lot
+because one point to patrol was chosen for the whole game, and continuous changing of a patrol
+point at the middle of the stage at every action would greatly reduce the probability of any food
+on our side being eaten.
